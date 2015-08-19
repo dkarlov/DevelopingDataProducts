@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Predicting Diamond Price</title>
+  <meta charset="utf-8">
+  <meta name="description" content="Predicting Diamond Price">
+  <meta name="author" content="dkarlov">
+  <meta name="generator" content="slidify" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/default.css" media="all" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/phone.css" 
+    media="only screen and (max-device-width: 480px)" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/slidify.css" >
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/tomorrow.css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->  <link rel=stylesheet href="libraries/widgets/bootstrap/css/bootstrap.css"></link>
+<link rel=stylesheet href="./assets/css/ribbons.css"></link>
+
+  
+  <!-- Grab CDN jQuery, fall back to local if offline -->
+  <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.min.js"></script>
+  <script>window.jQuery || document.write('<script src="libraries/widgets/quiz/js/jquery.js"><\/script>')</script> 
+  <script data-main="libraries/frameworks/io2012/js/slides" 
+    src="libraries/frameworks/io2012/js/require-1.0.8.min.js">
+  </script>
+  
+  
+
+</head>
+<body style="opacity: 0">
+  <slides class="layout-widescreen">
+    
+    <!-- LOGO SLIDE -->
+        <slide class="title-slide segue nobackground">
+  <hgroup class="auto-fadein">
+    <h1>Predicting Diamond Price</h1>
+    <h2>Shiny Application</h2>
+    <p>dkarlov<br/>Prepared for Developing Data Products class on Coursera</p>
+  </hgroup>
+  <article></article>  
+</slide>
+    
+
+    <!-- SLIDES -->
+    <slide class="" id="slide-1" style="background:;">
+  <hgroup>
+    <h2><span style="color:blue">Dataset description</span></h2>
+  </hgroup>
+  <article data-timings="">
+    <ul>
+<li>Data can be obtained from package &quot;ECdat&quot;</li>
+<li>Dataset contains 308 entries</li>
+<li>Each object is characterised by five variable:
+
+<ul>
+<li>&quot;carat&quot; - numeric variable equalstha mass of dimanod in carats </li>
+<li>&quot;color&quot; - categorical variable which can be D, E, F, G, H, I. The most uncontaminated and prized is D.</li>
+<li>&quot;clarity&quot; - categorical variable which can be IF (internally flawless), VVS1 and VVS2 (very very slightly imperfect), VS1 and VS2 (very slightly imperfect)</li>
+<li>&quot;certification&quot; - categorical variable. Diamonds from the dataset are certified by one of three organisation: Gemmological Institute of America (GIA), Antwerp based International Gemmological Institute (IGI), Hoge Raad Voor Diamant (HRD)</li>
+<li>&quot;price&quot; - numeric variable which equals the price in Singapour dollar </li>
+</ul></li>
+<li>The goal of this application predict diamond price based on the other four variables</li>
+</ul>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-2" style="background:;">
+  <hgroup>
+    <h2><span style="color:blue">Exploratory analysis</span></h2>
+  </hgroup>
+  <article data-timings="">
+    
+<div style='float:left;width:48%;' class='centered'>
+  <p><img src="assets/fig/unnamed-chunk-1-1.png" alt="plot of chunk unnamed-chunk-1"> </p>
+
+</div>
+<div style='float:right;width:48%;'>
+  <p>Main conclusions from exploratory analysis:</p>
+
+<ul>
+<li>Dependence of the Diamond price on its&#39; mass is nonlinear.</li>
+<li>Variables colour and clarity are evidently influence on the price value.</li>
+<li>The influence of the Variable certification is not so evident</li>
+<li>Heteroscedasticity in data is observed</li>
+</ul>
+
+</div>
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-3" style="background:;">
+  <hgroup>
+    <h2><span style="color:blue">Linear model construction and assession</span></h2>
+  </hgroup>
+  <article data-timings="">
+    <p>I used simple linear model and model with square root transformation of price value for heteroscdasticity elimination.
+Q-Q plot and residuals inspection show that the latter model is better for evaluation. </p>
+
+<div style='float:left;width:48%;' class='centered'>
+  <pre><code class="r">fit_simple=lm(price ~ carat+colour+clarity+ 
+certification+clarity*carat+ 
+colour*carat+certification*carat,
+data=Diamond)
+</code></pre>
+
+<p><img src="assets/fig/unnamed-chunk-3-1.png" alt="plot of chunk unnamed-chunk-3"> </p>
+
+</div>
+<div style='float:right;width:48%;'>
+  <pre><code class="r">fit_sqrt=lm(price^0.5 ~ carat+clarity+
+colour+certification+clarity*carat+ 
+colour*carat + certification*carat,
+data=Diamond)
+</code></pre>
+
+<p><img src="assets/fig/unnamed-chunk-5-1.png" alt="plot of chunk unnamed-chunk-5"> </p>
+
+</div>
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-4" style="background:;">
+  <hgroup>
+    <h2><span style="color:blue">Model selection and cross-validation</span></h2>
+  </hgroup>
+  <article data-timings="">
+    
+<div style='float:left;width:48%;' class='centered'>
+  <p>Here I execute anova test on the model &quot;fit_sqrt&quot;.</p>
+
+<pre><code class="r">anova(fit_sqrt)
+</code></pre>
+
+<p>The results mean that I&#39;d better omit variable carat*certification from the model.
+Now I am ready to produce 10-fold cross-validation on the dataset</p>
+
+<pre><code class="r">options(warn=-1)
+final_fit = lm(price^0.5 ~ carat+clarity+
+colour+certification+clarity*carat+
+colour*carat,data=Diamond)
+</code></pre>
+
+</div>
+<div style='float:right;width:48%;'>
+  <pre><code class="r">cv &lt;- cv.lm(df=Diamond, final_fit, m=10)
+</code></pre>
+
+<p><img src="assets/fig/unnamed-chunk-8-1.png" alt="plot of chunk unnamed-chunk-8"> </p>
+
+</div>
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+    <slide class="backdrop"></slide>
+  </slides>
+  <div class="pagination pagination-small" id='io2012-ptoc' style="display:none;">
+    <ul>
+      <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=1 title='<span style="color:blue">Dataset description</span>'>
+         1
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=2 title='<span style="color:blue">Exploratory analysis</span>'>
+         2
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=3 title='<span style="color:blue">Linear model construction and assession</span>'>
+         3
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=4 title='<span style="color:blue">Model selection and cross-validation</span>'>
+         4
+      </a>
+    </li>
+  </ul>
+  </div>  <!--[if IE]>
+    <script 
+      src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js">  
+    </script>
+    <script>CFInstall.check({mode: 'overlay'});</script>
+  <![endif]-->
+</body>
+  <!-- Load Javascripts for Widgets -->
+  <script src="libraries/widgets/bootstrap/js/bootstrap.min.js"></script>
+<script src="libraries/widgets/bootstrap/js/bootbox.min.js"></script>
+
+  <script>  
+  $(function (){ 
+    $("#example").popover(); 
+    $("[rel='tooltip']").tooltip(); 
+  });  
+  </script>  
+  <!-- LOAD HIGHLIGHTER JS FILES -->
+  <script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <!-- DONE LOADING HIGHLIGHTER JS FILES -->
+   
+  </html>
